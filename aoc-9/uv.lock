@@ -1,0 +1,19 @@
+version = 1
+requires-python = ">=3.12"
+
+[[package]]
+name = "aoc-9"
+version = "0.1.0"
+source = { virtual = "." }
+dependencies = [
+    { name = "llist" },
+]
+
+[package.metadata]
+requires-dist = [{ name = "llist", specifier = ">=0.7.1" }]
+
+[[package]]
+name = "llist"
+version = "0.7.1"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/fe/27/74fd16961c183bee40ba510d42b1b2c90f627713d26bdda09e8d7594ef37/llist-0.7.1.tar.gz", hash = "sha256:6f73a120136897a0bce61c202188f4f3891d9f70aa906d21fc1ee1cf43659eca", size = 42979 }
