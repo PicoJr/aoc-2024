@@ -47,7 +47,7 @@ def solve(topo_map: TopoMap) -> int:
         for c in range(topo_map.cols):
             if topo_map.data[r][c] == 0:
                 starts.append((0, (r, c)))
-    print(f"{starts=}")
+    # print(f"{starts=}")
 
     score = 0
     for start in starts:
@@ -65,15 +65,45 @@ def solve(topo_map: TopoMap) -> int:
                         new_todo.append((vn, (rn, cn)))
                     # else not reachable
             todo = deque(new_todo)
-        print(f"reached {len(nines_positions)=} 9 from {start=}")
+        # print(f"reached {len(nines_positions)=} 9 from {start=}")
         score += len(nines_positions)
 
     return score
 
 
+
+def solve2(topo_map: TopoMap) -> int:
+    starts: List[Tuple[int, Position]] = []
+    for r in range(topo_map.rows):
+        for c in range(topo_map.cols):
+            if topo_map.data[r][c] == 0:
+                starts.append((0, (r, c)))
+    print(f"{starts=}")
+
+    ratings = 0
+    for start in starts:
+
+        todo: Deque[Tuple[int, Position]] = deque([start])
+        while todo:
+            new_todo = []
+            for (value, (r, c)) in todo:
+                neighbors = valid_neighbors(topo_map, r, c)
+                for (vn, (rn, cn)) in neighbors:
+                    if value == 8 and vn == 9:
+                        ratings += 1
+                    elif vn == (value + 1):
+                        new_todo.append((vn, (rn, cn)))
+                    # else not reachable
+            todo = deque(new_todo)
+
+    return ratings
+
+
 if __name__ == "__main__":
     print(f"{parse_content(EXAMPLE)=}")
     print(f"{solve(parse_content(EXAMPLE))=}")
+    print(f"{solve2(parse_content(EXAMPLE))=}")
     with open("./input.txt") as input_file:
         content = input_file.read()
         print(f"{solve(parse_content(content))=}")
+        print(f"{solve2(parse_content(content))=}")
