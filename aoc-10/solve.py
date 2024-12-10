@@ -2,8 +2,7 @@ from typing import List, Tuple, Deque
 from dataclasses import dataclass
 from collections import deque
 
-EXAMPLE=\
-"""\
+EXAMPLE = """\
 89010123
 78121874
 87430965
@@ -14,13 +13,16 @@ EXAMPLE=\
 10456732
 """
 
+
 @dataclass
 class TopoMap:
     data: List[List[int]]
     rows: int
     cols: int
 
+
 Position = Tuple[int, int]
+
 
 def parse_content(content: str) -> TopoMap:
     topo_map = TopoMap([], 0, 0)
@@ -31,15 +33,23 @@ def parse_content(content: str) -> TopoMap:
     topo_map.cols = len(topo_map.data[0])
     return topo_map
 
-def valid_neighbors(topo_map: TopoMap, row: int, col: int) -> List[Tuple[int, Position]]:
+
+def valid_neighbors(
+    topo_map: TopoMap, row: int, col: int
+) -> List[Tuple[int, Position]]:
     positions = [
-        (row-1, col),
-        (row+1, col),
-        (row, col-1),
-        (row, col+1),
+        (row - 1, col),
+        (row + 1, col),
+        (row, col - 1),
+        (row, col + 1),
     ]
-    valid_positions = [(r, c) for r, c in positions if (0 <= r < topo_map.rows and 0 <= c < topo_map.cols)]
+    valid_positions = [
+        (r, c)
+        for r, c in positions
+        if (0 <= r < topo_map.rows and 0 <= c < topo_map.cols)
+    ]
     return [(topo_map.data[r][c], (r, c)) for r, c in valid_positions]
+
 
 def solve(topo_map: TopoMap) -> int:
     starts: List[Tuple[int, Position]] = []
@@ -56,9 +66,9 @@ def solve(topo_map: TopoMap) -> int:
         nines_positions = set()
         while todo:
             new_todo = []
-            for (value, (r, c)) in todo:
+            for value, (r, c) in todo:
                 neighbors = valid_neighbors(topo_map, r, c)
-                for (vn, (rn, cn)) in neighbors:
+                for vn, (rn, cn) in neighbors:
                     if value == 8 and vn == 9:
                         nines_positions.add((rn, cn))
                     elif vn == (value + 1):
@@ -71,14 +81,13 @@ def solve(topo_map: TopoMap) -> int:
     return score
 
 
-
 def solve2(topo_map: TopoMap) -> int:
     starts: List[Tuple[int, Position]] = []
     for r in range(topo_map.rows):
         for c in range(topo_map.cols):
             if topo_map.data[r][c] == 0:
                 starts.append((0, (r, c)))
-    print(f"{starts=}")
+    # print(f"{starts=}")
 
     ratings = 0
     for start in starts:
@@ -86,9 +95,9 @@ def solve2(topo_map: TopoMap) -> int:
         todo: Deque[Tuple[int, Position]] = deque([start])
         while todo:
             new_todo = []
-            for (value, (r, c)) in todo:
+            for value, (r, c) in todo:
                 neighbors = valid_neighbors(topo_map, r, c)
-                for (vn, (rn, cn)) in neighbors:
+                for vn, (rn, cn) in neighbors:
                     if value == 8 and vn == 9:
                         ratings += 1
                     elif vn == (value + 1):
