@@ -3,15 +3,16 @@ from collections import defaultdict, deque
 
 from tqdm import tqdm
 
-EXAMPLE=\
-"""\
+EXAMPLE = """\
 125 17
 """
 
 Stones = List[int]
 
+
 def load_content(content: str) -> Stones:
     return list(map(int, content.rstrip().split(" ")))
+
 
 def solve(stones: Stones, n_blink: int) -> Tuple[int, Stones]:
     stones_copy = stones.copy()
@@ -24,8 +25,8 @@ def solve(stones: Stones, n_blink: int) -> Tuple[int, Stones]:
                 stone_str = str(stone)
                 stone_digits = len(stone_str)
                 if stone_digits % 2 == 0:
-                    first_half = stone_str[:stone_digits // 2]
-                    second_half = stone_str[stone_digits // 2:]
+                    first_half = stone_str[: stone_digits // 2]
+                    second_half = stone_str[stone_digits // 2 :]
                     new_stones.append(int(first_half))
                     new_stones.append(int(second_half))
                 else:
@@ -33,6 +34,7 @@ def solve(stones: Stones, n_blink: int) -> Tuple[int, Stones]:
         stones_copy = new_stones
 
     return len(stones_copy), stones_copy
+
 
 def solve_memo(stones: Stones, n_blink: int) -> int:
     memo: Dict[Tuple[int, int], int] = defaultdict(lambda: 0)
@@ -66,13 +68,12 @@ def solve_memo(stones: Stones, n_blink: int) -> int:
     return total
 
 
-
 if __name__ == "__main__":
     print(f"{load_content(EXAMPLE)=}")
     for i in range(6):
         print(f"{solve(load_content(EXAMPLE), i)[0]=}")
         print(f"{solve_memo(load_content(EXAMPLE), i)=}")
-    
+
     print(f"{solve(load_content(EXAMPLE), 25)[0]=}")
     # print(f"{solve_memo(load_content(EXAMPLE), 25)=}")
     with open("./input.txt") as input_file:
@@ -80,4 +81,3 @@ if __name__ == "__main__":
         print(f"{solve(load_content(content), 25)[0]=}")
         # print(f"{solve_memo(load_content(content), 25)=}")
         print(f"{solve_memo(load_content(content), 75)=}")
-
