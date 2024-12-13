@@ -1,6 +1,6 @@
 from collections import defaultdict, deque
 from dataclasses import dataclass
-from typing import Deque, Dict, List, Optional, Union, Tuple
+from typing import Deque, Dict, List, Optional, Set, Union, Tuple
 
 EXAMPLE_4x4 = """\
 AAAA
@@ -30,6 +30,84 @@ MIIISIJEEE
 MMMISSJEEE
 """
 
+EXAMPLE_6x6=\
+"""\
+AAAAAA
+AAABBA
+AAABBA
+ABBAAA
+ABBAAA
+AAAAAA
+"""
+
+EXAMPLE_E= \
+"""\
+EEEEE
+EXXXX
+EEEEE
+EXXXX
+EEEEE
+"""
+
+UP = (-1, 0)
+DOWN = (1, 0)
+LEFT = (0, -1)
+RIGHT = (0, 1)
+
+Direction = Tuple[int, int]
+RowCol = Tuple[int, int]
+Sides = Tuple[bool, bool, bool, bool]
+
+def direction_str(d: Direction) -> str:
+    if d == UP:
+        return "UP"
+    elif d == RIGHT:
+        return "RIGHT"
+    elif d == DOWN:
+        return "DOWN"
+    elif d == LEFT:
+        return "LEFT"
+    else:
+        raise AssertionError
+
+
+def rotate_clockwise(d: Direction) -> Direction:
+    if d == UP:
+        return RIGHT
+    elif d == RIGHT:
+        return DOWN
+    elif d == DOWN:
+        return LEFT
+    elif d == LEFT:
+        return UP
+    else:
+        raise AssertionError
+
+def direction_free(d: Direction, sides: Sides) -> bool:
+    left, up, right, down = sides
+    if d == UP and not up:
+        return True
+    elif d == DOWN and not down:
+        return True
+    elif d == LEFT and not left:
+        return True
+    elif d == RIGHT and not right:
+        return True
+    else:
+        return False
+
+def fence_left_of_direction(d: Direction, sides: Sides) -> bool:
+    left, up, right, down = sides
+    if d == UP and left:
+        return True
+    elif d == DOWN and right:
+        return True
+    elif d == LEFT and down:
+        return True
+    elif d == RIGHT and up:
+        return True
+    else:
+        return False
 
 @dataclass
 class Puzzle:
@@ -44,30 +122,51 @@ class PuzzleClusters:
     rows: int
     cols: int
 
+@dataclass
+class PuzzleFences:
+    data: List[List[int]]
+    rows: int
+    cols: int
+
 
 def neighbors(
-    puzzle: Union[PuzzleClusters, Puzzle],
+    puzzle: Union[PuzzleClusters, Puzzle, PuzzleFences],
     row: int,
     col: int,
-    down_right: bool = True,
 ) -> Union[List[Tuple[int, int, int]], List[Tuple[int, int, str]]]:
     n = []
 
-    if down_right:
-        directions = [(-1, 0), (0, -1), (0, 1), (1, 0)]
-    else:
-        directions = [(1, 0), (0, 1), (0, -1), (-1, 0)]
+    directions = [LEFT, UP, RIGHT, DOWN]
 
     for dr, dc in directions:
         if 0 <= row + dr < puzzle.rows and 0 <= col + dc < puzzle.cols:
             n.append((row + dr, col + dc, puzzle.data[row + dr][col + dc]))
     return n
 
+def neighbors2(
+    puzzle: Union[PuzzleClusters, Puzzle, PuzzleFences],
+    row: int,
+    col: int,
+) -> Union[
+        List[Optional[Tuple[int, int, int]]],
+        List[Optional[Tuple[int, int, str]]],
+    ]:
+    n = []
+
+    directions = [LEFT, UP, RIGHT, DOWN]
+
+    for dr, dc in directions:
+        if 0 <= row + dr < puzzle.rows and 0 <= col + dc < puzzle.cols:
+            n.append((row + dr, col + dc, puzzle.data[row + dr][col + dc]))
+        else:
+            n.append(None)
+    return n
+
 
 def fancy_str(
-    puzzle: Union[PuzzleClusters, Puzzle],
+    puzzle: Union[PuzzleClusters, Puzzle, PuzzleFences],
 ) -> str:
-    cluster = isinstance(puzzle, PuzzleClusters)
+    cluster = isinstance(puzzle, PuzzleClusters) or isinstance(puzzle, PuzzleFences)
     lines = []
     for line in puzzle.data:
         if cluster:
@@ -146,13 +245,97 @@ def solve(puzzle: Puzzle) -> int:
     return total
 
 
+def solve2(puzzle: Puzzle) -> int:
+    clusters = clusterize(puzzle)
+    areas: Dict[Tuple[int, str], int] = defaultdict(lambda: 0)
+
+    for r in range(puzzle.rows):
+        for c in range(puzzle.cols):
+            areas[(clusters.data[r][c], puzzle.data[r][c])] += 1
+
+    total = 0
+    for (cluster, plant), area in areas.items():
+        fences: PuzzleFences = PuzzleFences(data=[], rows=puzzle.rows * 2 + 1, cols=puzzle.cols * 2 + 1)
+        for r in range(fences.rows):
+            fences.data.append([-1] * fences.cols)
+
+        for r in range(puzzle.rows):
+            for c in range(puzzle.cols):
+                if clusters.data[r][c] != cluster:
+                    continue
+                sides = [False, False, False, False]
+                for i_side, neighbor in enumerate(neighbors2(clusters, r, c)):
+                    if neighbor is None:
+                        sides[i_side] = True
+                    else:
+                        _rc, _cc, nc = neighbor
+                        if nc != clusters.data[r][c]:
+                            sides[i_side] = True
+                [left, up, right, down] = sides
+                cluster_id = clusters.data[r][c]
+                if left:
+                    fences.data[2*r][2*c] = cluster_id
+                    fences.data[2*r + 1][2*c] = cluster_id
+                    fences.data[2*r + 2][2*c] = cluster_id
+                if up:
+                    fences.data[2*r][2*c] = cluster_id
+                    fences.data[2*r][2*c + 1] = cluster_id
+                    fences.data[2*r][2*c + 2] = cluster_id
+                if right:
+                    fences.data[2*r][2*c + 2] = cluster_id
+                    fences.data[2*r + 1][2*c + 2] = cluster_id
+                    fences.data[2*r + 2][2*c + 2] = cluster_id
+                if down:
+                    fences.data[2*r + 2][2*c] = cluster_id
+                    fences.data[2*r + 2][2*c + 1] = cluster_id
+                    fences.data[2*r + 2][2*c + 2] = cluster_id
+
+        corners = 0
+        antimobius: Dict[RowCol, int] = defaultdict(lambda : 0)
+        # print(f"{cluster=} {plant=} {{")
+        for r in range(puzzle.rows):
+            for c in range(puzzle.cols):
+                # top left corner
+                r2, c2 = 2 * r, 2 * c
+                check_top_left_corner = [(r2, c2), (r2, c2 + 1), (r2 + 1, c2)]
+                check_top_right_corner = [(r2, c2 + 2), (r2, c2 + 1), (r2 + 1, c2 + 2)]
+                check_bottom_right_corner = [(r2 + 2, c2 + 2), (r2 + 1, c2 + 2), (r2 + 2, c2 + 1)]
+                check_bottom_left_corner = [(r2 + 2, c2), (r2 + 2, c2 + 1), (r2 + 1, c2)]
+                new_corners = 0
+                corners_checks = [check_top_left_corner, check_top_right_corner, check_bottom_right_corner, check_bottom_left_corner]
+                corner_names = ["top_left", "top_right", "bottom_right", "bottom_left"]
+                for checks, corner_name in zip(corners_checks, corner_names):
+                    if all([fences.data[r_corner][c_corner] == cluster for (r_corner, c_corner) in checks]):
+                        antimobius[checks[0]] += 1
+                        if antimobius[checks[0]] > 2:
+                            print(f"found a mobius...at {checks[0]}")
+                        else:
+                            new_corners += 1
+                        # print(f"\t found corner {corner_name} at {r=} {c=}")
+                corners += new_corners
+
+
+        # print(fancy_str(clusters))
+        # print(fancy_str(fences))
+        # print(f"=> {corners=} }}")
+        total += corners * area
+
+    return total
+
+
 if __name__ == "__main__":
-    # print(f"{fancy_str(load_puzzle(EXAMPLE))}")
-    # print(f"{fancy_str(clusterize(load_puzzle(EXAMPLE)))}")
-    print(f"{solve(load_puzzle(EXAMPLE_4x4))=}")
-    print(f"{fancy_str(clusterize(load_puzzle(EXAMPLE_5x5)))}")
-    print(f"{solve(load_puzzle(EXAMPLE_5x5))=}")
-    print(f"{solve(load_puzzle(EXAMPLE_10x10))=}")
+    # print(f"{fancy_str(load_puzzle(EXAMPLE_5x5))}")
+    # print(f"{solve(load_puzzle(EXAMPLE_4x4))=}")
+    # print(f"{fancy_str(clusterize(load_puzzle(EXAMPLE_5x5)))}")
+    # print(f"{solve(load_puzzle(EXAMPLE_5x5))=}")
+    # print(f"{solve(load_puzzle(EXAMPLE_10x10))=}")
+
+    print(f"{solve2(load_puzzle(EXAMPLE_4x4))=} vs 80")
+    print(f"{solve2(load_puzzle(EXAMPLE_5x5))=} vs 436")
+    print(f"{solve2(load_puzzle(EXAMPLE_6x6))=} vs 368")
+    print(f"{solve2(load_puzzle(EXAMPLE_E))=} vs 236")
+    print(f"{solve2(load_puzzle(EXAMPLE_10x10))=} vs 1206")
     with open("./input.txt") as input_file:
         content = input_file.read()
-        print(f"{solve(load_puzzle(content))}")
+        print(f"{solve(load_puzzle(content))} vs 1471452")
+        print(f"{solve2(load_puzzle(content))} vs 863366")
